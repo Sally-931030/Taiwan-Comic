@@ -1,0 +1,332 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>少女漫畫廚房：台味手作冒險</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #fff;
+        }
+
+        /* 首頁背景：Google Drawing 指定圖片 */
+        .manga-bg {
+            position: fixed;
+            inset: 0;
+            background-image: url('https://docs.google.com/drawings/d/1w7XNHKmHNQLPHc00K-LIqjVnlDsPeoyBok_lPThpyw0/export/png');
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .manga-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0);
+            z-index: 0;
+        }
+
+        .game-container {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .home-menu {
+            margin-top: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn-manga-hotspot {
+            background: white;
+            border: 4px solid #000;
+            padding: 12px 30px;
+            font-weight: 900;
+            color: #000;
+            font-size: 1.1rem;
+            box-shadow: 6px 6px 0px #ff6b81;
+            transition: all 0.2s;
+            cursor: pointer;
+            width: 200px;
+            text-align: center;
+            border-radius: 2px;
+        }
+
+        .btn-manga-hotspot:hover {
+            transform: translate(-3px, -3px);
+            box-shadow: 10px 10px 0px #ff6b81;
+            background-color: #fff5f7;
+        }
+
+        /* 製作視窗 */
+        .dialog-box {
+            background: white;
+            border: 5px solid #000;
+            padding: 25px;
+            box-shadow: 15px 15px 0px rgba(0,0,0,0.15);
+            max-width: 90%;
+            width: 460px;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        .manga-panel {
+            width: 100%;
+            height: 240px;
+            border: 4px solid #000;
+            margin-bottom: 20px;
+            background-size: cover;
+            background-position: center;
+            background-color: #f8f8f8;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .interactive-icon {
+            font-size: 90px;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s;
+            filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.1));
+            display: inline-block;
+        }
+
+        .interactive-icon:active {
+            transform: scale(0.8) rotate(-15deg);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 18px;
+            background: #f0f0f0;
+            border: 3px solid #000;
+            margin-top: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #ff6b81;
+            width: 0%;
+            transition: width 0.2s;
+        }
+
+        /* 封面圖樣式，增加滑鼠指針效果 */
+        .cover-link {
+            display: block;
+            width: fit-content;
+            margin: 15px auto;
+            transition: transform 0.2s;
+        }
+
+        .cover-link:hover {
+            transform: scale(1.05);
+        }
+
+        .cover-img {
+            width: 220px;
+            height: 240px;
+            border: 3px solid #000;
+            object-fit: contain;
+            box-shadow: 6px 6px 0px #000;
+            background: white;
+            cursor: pointer;
+        }
+
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            animation: sparkle-anim 0.6s ease-out forwards;
+            font-size: 24px;
+            z-index: 100;
+        }
+
+        @keyframes sparkle-anim {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="manga-bg" class="manga-bg"></div>
+    <div class="manga-overlay"></div>
+
+    <div class="game-container">
+        <!-- 首頁 -->
+        <div id="screen-home" class="flex flex-col items-center">
+            <div class="home-menu">
+                <div class="bg-white border-4 border-black p-4 mb-4 font-black text-2xl shadow-[6px_6px_0px_#ff6b81]">
+                    ❤ 漫味手作廚房 ❤
+                </div>
+                <button onclick="startGame('meatball')" class="btn-manga-hotspot">手作貢丸</button>
+                <button onclick="startGame('mincedPork')" class="btn-manga-hotspot">秘傳瓜仔肉</button>
+                <button onclick="startGame('tea')" class="btn-manga-hotspot">香醇茶茗</button>
+            </div>
+        </div>
+
+        <!-- 製作畫面 -->
+        <div id="screen-game" class="hidden flex flex-col items-center">
+            <div class="dialog-box">
+                <div id="step-img" class="manga-panel"></div>
+                <h2 id="step-title" class="text-2xl font-black mb-1"></h2>
+                <p id="step-desc" class="text-gray-600 font-bold mb-6 italic"></p>
+                
+                <div class="flex flex-col items-center">
+                    <div id="interactive-icon" class="interactive-icon"></div>
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結果畫面 -->
+        <div id="screen-result" class="hidden flex flex-col items-center">
+            <div class="dialog-box">
+                <h2 class="text-2xl font-black mb-4 italic">料理成功！！</h2>
+                
+                <!-- 封面圖超連結 -->
+                <a id="manga-link" href="#" target="_blank" class="cover-link">
+                    <img id="manga-cover" class="cover-img" src="" alt="漫畫封面">
+                </a>
+                
+                <div class="bg-gray-50 p-4 border-2 border-black mt-2 text-left">
+                    <h3 id="manga-title" class="text-lg font-black mb-1 text-pink-600"></h3>
+                    <p id="manga-desc" class="text-gray-800 text-xs leading-relaxed font-bold"></p>
+                </div>
+                
+                <p class="mt-4 text-xs font-bold text-gray-500 underline">點擊封面觀看完整漫畫內容</p>
+                
+                <button onclick="resetGame()" class="mt-4 font-black border-2 border-black px-6 py-2 hover:bg-black hover:text-white transition-colors">重新開始</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ASSETS = {
+            meatball: {
+                steps: [
+                    { title: "敲打肉餡", desc: "把肉塊敲出彈性！感受肌肉的跳動！", icon: "🔨", target: 8, img: "https://docs.google.com/drawings/d/1a2Si2tDq0_Wq-p0PonNX4VExbiRy6jGiP3ELQrLcnss/export/png" },
+                    { title: "揉捏圓球", desc: "在掌心溫柔滾動，變成完美的正圓形。", icon: "👐", target: 6, img: "https://docs.google.com/drawings/d/1hwu-zKq7oBSEC5wv0B0WVlVL4bH_9LWW-_77hDTX3xU/export/png" },
+                    { title: "下鍋烹煮", desc: "噗通！美味即將在滾水中綻放。", icon: "🍲", target: 1, img: "https://docs.google.com/drawings/d/1ZJ3BFOFgttHRoCfWa24giPHeFHNZcKVkPPGrPGq-hkc/export/png" }
+                ],
+                mangaTitle: "《臺灣特有種》",
+                mangaCover: "https://docs.google.com/drawings/d/1HBLY8_6H_NQjKmHDPWhWDdtgPKSKUvo_z6YxVGFKN9w/export/png",
+                mangaUrl: "https://www.creative-comic.tw/en/book/137/content",
+                mangaDesc: "貢丸是台灣最具代表性的美味之一，《臺灣特有種》帶你重新看見這片土地上強韌且獨特的生命力與文化色彩。"
+            },
+            mincedPork: {
+                steps: [
+                    { title: "開啟瓜罐", desc: "清脆聲響！這是家傳鹹甜滋味的開端。", icon: "🥫", target: 3, img: "https://docs.google.com/drawings/d/1hiJJ46IqNkeYr95YLJjDJCkzDY2TGRnR9OW6hhYJiM0/export/png" },
+                    { title: "混合攪拌", desc: "將爽脆瓜仔拌入鮮肉，香氣撲鼻而來。", icon: "🥢", target: 8, img: "https://docs.google.com/drawings/d/1vvPJUBu8ElTkQn_7vSkLUf3wDuyZdxzdx6BesBkKV8M/export/png" },
+                    { title: "蒸煮精華", desc: "等待蒸氣鎖住每一滴鮮美的肉汁。", icon: "🔥", target: 1, img: "https://docs.google.com/drawings/d/1S5c0gqS7VuycFF83B9yeqC25JDJg7tqGiLS_kg1S0iU/export/png" }
+                ],
+                mangaTitle: "《手路菜》",
+                mangaCover: "https://docs.google.com/drawings/d/1qG6Vj8Fn8W4dL8h9H4lxZK6-QcBmSKfQiM72x93Aecg/export/png",
+                mangaUrl: "https://www.creative-comic.tw/zh/book/300/content",
+                mangaDesc: "瓜仔肉是家家戶戶的靈魂記憶，《手路菜》紀錄了那些指尖傳遞的溫情，以及即將消失的職人手感美食。"
+            },
+            tea: {
+                steps: [
+                    { title: "採摘嫩芽", desc: "只選最鮮嫩的一心二葉，保留大地芬芳。", icon: "🌱", target: 6, img: "https://docs.google.com/drawings/d/12c3DC3HOOPgXYT7r0473Bk5GnfliN6b2jITDrG2FaNs/edit?usp=sharing" },
+                    { title: "日光萎凋", desc: "讓暖陽帶走水分，喚醒茶葉的甘醇靈魂。", icon: "☀️", target: 4, img: "https://docs.google.com/drawings/d/1vylNwZOIO39ROyAYE4xeOAPk9UE6HdN7nU-1WKts7f8/edit?usp=sharing" },
+                    { title: "沖入茶湯", desc: "金黃色的琥珀緩緩展開，重現輝煌年代。", icon: "🍵", target: 1, img: "https://docs.google.com/drawings/d/1tPutPzSNFVGqSEdnlLKoawlOFXWcAi7poU3opZqAu4k/edit?usp=sharing" }
+                ],
+                mangaTitle: "《異人茶跡》",
+                mangaCover: "https://docs.google.com/drawings/d/1QE_9LkS427bWvxdxKteKRlcEmT2dW9KIOT9z8bm_ViM/edit?usp=sharing",
+                mangaUrl: "https://www.creative-comic.tw/zh/book/161/content",
+                mangaDesc: "這杯清香茶湯承載著大稻埕的茶貿傳奇，《異人茶跡》帶領讀者重回台灣茶走向世界的黃金探險時代。"
+            }
+        };
+
+        let currentDish = null;
+        let currentStepIndex = 0;
+        let currentProgress = 0;
+
+        function startGame(dishKey) {
+            currentDish = dishKey;
+            currentStepIndex = 0;
+            currentProgress = 0;
+            
+            document.getElementById('screen-home').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('manga-bg').style.opacity = "0.2";
+            
+            updateStep();
+        }
+
+        function updateStep() {
+            const data = ASSETS[currentDish];
+            const step = data.steps[currentStepIndex];
+            
+            document.getElementById('step-title').innerText = step.title;
+            document.getElementById('step-desc').innerText = step.desc;
+            document.getElementById('step-img').style.backgroundImage = `url('${step.img}')`;
+            document.getElementById('interactive-icon').innerText = step.icon;
+            document.getElementById('progress-fill').style.width = "0%";
+            
+            document.getElementById('interactive-icon').onclick = (e) => {
+                currentProgress++;
+                createSparkle(e.clientX, e.clientY);
+                const percent = (currentProgress / step.target) * 100;
+                document.getElementById('progress-fill').style.width = percent + "%";
+                
+                if (currentProgress >= step.target) {
+                    currentStepIndex++;
+                    currentProgress = 0;
+                    if (currentStepIndex < data.steps.length) {
+                        setTimeout(updateStep, 400);
+                    } else {
+                        setTimeout(showResult, 500);
+                    }
+                }
+            };
+        }
+
+        function showResult() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+            
+            const data = ASSETS[currentDish];
+            document.getElementById('manga-title').innerText = data.mangaTitle;
+            document.getElementById('manga-desc').innerText = data.mangaDesc;
+            document.getElementById('manga-cover').src = data.mangaCover;
+            document.getElementById('manga-link').href = data.mangaUrl;
+        }
+
+        function resetGame() {
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-home').classList.remove('hidden');
+            document.getElementById('manga-bg').style.opacity = "1";
+        }
+
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.innerHTML = '✨';
+            sparkle.style.left = (x - 12) + 'px';
+            sparkle.style.top = (y - 12) + 'px';
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 600);
+        }
+    </script>
+</body>
+</html>
+
+```
